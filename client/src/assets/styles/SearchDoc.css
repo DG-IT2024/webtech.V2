@@ -1,0 +1,91 @@
+.searchdoc-layout {
+  display: flex;
+  gap: 10px;
+  width: 100%;
+}
+
+/* LEFT FILTERS */
+.searchdoc-filters {
+  width: 30%;
+  min-width: 300px;
+}
+
+.searchdoc-card {
+  background: #f8f9fa;
+  padding: 18px;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+}
+
+/* RIGHT TABLE */
+.searchdoc-table {
+  flex: 1;
+  min-width: 0;
+  background: #f8f9fa;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+  overflow-x: hidden; /* remove horizontal scroll */
+}
+
+/* TABLE ADJUSTMENTS */
+.searchdoc-table table {
+  width: 100%;
+  table-layout: auto; /* auto so columns adjust naturally */
+  border-collapse: collapse;
+}
+
+/* Cells styling */
+.searchdoc-table th,
+.searchdoc-table td {
+  font-size: 13px;
+  padding: 8px 10px;
+  white-space: nowrap; /* prevent wrapping inside buttons or numbers */
+}
+
+/* Make No. column narrower but readable */
+.searchdoc-table th:first-child,
+.searchdoc-table td:first-child {
+  width: 50px;
+  text-align: center;
+}
+
+/* Action buttons column */
+.searchdoc-table th:last-child,
+.searchdoc-table td:last-child {
+  width: 120px; /* enough space for multiple buttons */
+  text-align: center;
+}
+
+/* icons/buttons */
+.searchdoc-table .tbl-Icon {
+  width: 20px;
+  margin-right: 10px;
+  cursor: pointer;
+}
+
+/* responsive adjustments */
+@media (max-width: 992px) {
+  .searchdoc-layout {
+    flex-direction: column;
+  }
+
+  .searchdoc-filters {
+    width: 100%;
+    margin-bottom: 15px;
+  }
+
+  .searchdoc-table {
+    padding: 10px;
+  }
+
+  .searchdoc-table th,
+  .searchdoc-table td {
+    font-size: 12px;
+    padding: 6px 8px;
+  }
+
+  .searchdoc-table th:last-child,
+  .searchdoc-table td:last-child {
+    width: auto;
+  }
+}

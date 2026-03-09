@@ -1,0 +1,28 @@
+body {
+  background-color: #eaf2fb;
+}
+
+/* Main dashboard layout */
+.side-Menu {
+  display: flex;
+  gap: 20px;
+  padding: 20px;
+}
+
+/* Stack content vertically on the right */
+.side-Menu > div:last-child {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  flex: 1;
+}
+
+/* Navbar look */
+.navbar {
+  background-color: #eaf2fb !important;
+  border-bottom: 1px solid rgba(93, 92, 92, 0.5);
+} 
+
+.banner-image img {
+  max-height: auto;
+}

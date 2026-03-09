@@ -1,0 +1,94 @@
+/* Default */
+* {
+  box-sizing: border-box;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+body {
+  margin: 0;
+}
+
+/* Page background */
+.signUp {
+  min-height: 100vh;
+  background-color: #eaf2fb;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/* White card container */
+.loginForm {
+  background-color: #ffffff;
+  width: 100%;
+  max-width: 420px;
+  padding: 40px 30px;
+  border-radius: 12px;
+  box-shadow: 0px 10px 30px rgba(0, 0, 0, 0.08);
+  text-align: center;
+}
+
+/* Headings (Login & Login to your account.) */
+.loginForm h1 {
+  font-size: 36px;
+  color: #243c8f;
+  margin-bottom: 10px;
+  font-weight: bold;
+}
+
+.loginForm h2 {
+  font-size: 16px;
+  font-weight: normal;
+  color: #8a8a8a;
+  margin-bottom: 30px;
+}
+
+/* Input group */
+.inputGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  text-align: left;
+}
+
+/* Labels (Email & Password) */
+.inputGroup label {
+  font-size: 14px;
+  color: #243c8f;
+  font-weight: 600;
+}
+
+/* Text Boxes */
+.inputGroup input {
+  padding: 12px 14px;
+  border-radius: 6px;
+  border: 1px solid #827d7c80;
+  font-size: 14px;
+  outline: none;
+}
+
+.inputGroup input:focus {
+  border-color: #243c8f;
+}
+
+/* LogIn Button */
+.inputGroup button {
+  margin-top: 20px;
+  padding: 12px;
+  background-color: #243c8f;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.inputGroup button:hover {
+  background-color: #1c2f73;
+}
+
+.google-image{
+  width: 60px;
+  width: 60px;
+}
