@@ -22,8 +22,7 @@
     "mongoose": "^9.1.6",
     "multer": "^2.0.2",
     "nodemailer": "^8.0.2",
-    "resend": "^6.9.4",
-    "tsx": "^4.21.0"
+    "tsx": "^4.21.0" 
   },
   "devDependencies": {
     "@types/bcrypt": "^6.0.0",
