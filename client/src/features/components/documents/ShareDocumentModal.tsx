@@ -1,13 +1,16 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, useEffect } from "react";
 import "../../../assets/styles/ShareDocumentModal.css";
-import axios from "axios";
+import api from "../../../shared/api";
 
 interface ShareDocumentModalProps {
   isOpen: boolean;
   onClose: () => void;
+  documentNo: string | null;
+  issuanceType: string | null;
 }
 
+// Defines the structure of user objects received from the backend
 interface User {
   firstName: string;
   middleName: string;
@@ -18,23 +21,41 @@ interface User {
 const ShareDocumentModal: React.FC<ShareDocumentModalProps> = ({
   isOpen,
   onClose,
+  documentNo,
+  issuanceType
 }) => {
+
+  // Stores the search input used to filter users
   const [search, setSearch] = useState("");
+
+  // Stores users that have been selected to receive the shared document
   const [selectedUsers, setSelectedUsers] = useState<User[]>([]);
+
+  // Stores the full list of employees fetched from the backend
   const [usersEmail, setUsersEmail] = useState<User[]>([]);
 
+  // Fetch all employees from the backend so they can be searched and selected
   const fetchEmployees = async () => {
-    const response = await axios.get("http://localhost:8080/aims/employees/allEmployees");
+    const response = await api.get("/aims/employees/allEmployees");
+  
+    // Some APIs wrap the data inside response.data.users while others return directly
+  
+   // This fallback ensures the component works with both response formats
     setUsersEmail(response.data.users ?? response.data ?? []);
   }
 
   useEffect (() =>{
       // eslint-disable-next-line react-hooks/set-state-in-effect
+      // Runs only once when the modal component mounts
+      // Retrieves the list of employees available for sharing
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       fetchEmployees();
   }, []);
 
+  // If the modal is not open, render nothing
   if (!isOpen) return null;
-
+  // Filters users dynamically based on the search keyword
+  // Matches against first name, middle name, last name, or email
   const filteredUsers = usersEmail.filter((user) => {
     const keyword = search.toLowerCase();
       return (
@@ -45,41 +66,84 @@ const ShareDocumentModal: React.FC<ShareDocumentModalProps> = ({
       );
   });
 
+  // Adds or removes a user from the selected users list when they are clicked
   const toggleUserSelection = (user: User) => {
     const exists = selectedUsers.find((u) => u.email === user.email);
 
     if (exists) {
+      // If the user is already selected, remove them from the list
       setSelectedUsers(selectedUsers.filter((u) => u.email !== user.email));
     } else {
+      // Otherwise add them to the selected users list
       setSelectedUsers([...selectedUsers, user]);
     }
-    setSearch(""); // clear search so user can search again
+    setSearch(""); // Clear search input after selection to allow new searches
   };
 
-  const handleShare = async () => {
-    const emails = selectedUsers.map((u) => u.email);
-    await axios.post("http://localhost:8080/aims/email/sendEmail", {
-      emails: emails,
-      subject: "Document Shared With You",
-      message: "A document has been shared with you. Please check the system."
-    });
+  //Empty the storage after successfully forwarded
+  const successForwarded = () => {
+    setSearch("");
+    setSelectedUsers([]);
+  }
+  //Handle cancel button or close the modal
+  const handleClose = () => {
+    setSearch("");
+    setSelectedUsers([]);
+    onClose();
+  };
 
-    alert("Email notifications sent!");
+ const handleShare = async () => {  
+    // Confirmation for sharing documents
+    const confirmed = window.confirm("Are you sure you want to share the document?");
+    if(!confirmed) return;
+      
+    // Sends email notifications to all selected users informing them that a document has been shared with them 
+    if(selectedUsers.length === 0){
+      alert("Please select at least one user.");
+      return
+    }else{
+      const emails = selectedUsers.map((u) => u.email);
+      const emailNotification = await api.post("/aims/emailNotification/sendEmail", {
+        emails: emails,
+        subject: issuanceType+" No. "+documentNo,
+        message: "You have new document forwarded from records section!"
+    });
+      if(emailNotification.data.success){
+        alert(emailNotification.data.message);
+      }
+    }
+
+    // Updating share documents model
+    const emails = selectedUsers.map((u) => u.email);
+    const response = await api.post("/aims/documents/shareDocument", {
+      emails: emails,
+      documentNo: documentNo
+    })
+    alert(response.data.message);
+    if(response.data.success){
+      successForwarded(); //Calling the method to empty the search field storage if forwarding is success
+    }
   };
 
   return (
     <div className="share-modal-overlay">
       <div className="share-modal-container">
         <h3 className="share-modal-title">Share Document</h3>
+
         <input
           type="text"
           placeholder="Search users..."
           className="form-control share-modal-search"
+          
+          // Displays selected user emails as tags-like text
           value={
              selectedUsers.length
             ? selectedUsers.map((u) => u.email).join(", ") + ", " + search
             : search
           }
+
+          // Handles dynamic typing after the last comma
+          // Allows multiple users to be selected like email recipients
           onChange={(e) => {
             const value = e.target.value;
             const lastComma = value.lastIndexOf(",");
@@ -90,6 +154,8 @@ const ShareDocumentModal: React.FC<ShareDocumentModalProps> = ({
               setSearch(value);
             }
           }}
+          
+          // Allows removing the last selected user using backspace 
           onKeyDown={(e) => {
             if (e.key === "Backspace" && search === "" && selectedUsers.length > 0) {
               setSelectedUsers(selectedUsers.slice(0, -1));
@@ -120,7 +186,7 @@ const ShareDocumentModal: React.FC<ShareDocumentModalProps> = ({
         <div className="share-modal-actions">
           <button
             className="btn btn-primary search-btn-cancel"
-            onClick={onClose}
+            onClick={handleClose}
           >
             Cancel
           </button>

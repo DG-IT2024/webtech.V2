@@ -1,9 +1,11 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import {useState, useEffect} from 'react'
 import "../../../assets/styles/EditDocumentModal.css";
-import axios from 'axios';
+import api from '../../../shared/api';
 
+// List of available issuance types used to populate the dropdown select
 const items = [
     '--SELECT--',
     'Administrative Order',
@@ -19,13 +21,12 @@ const items = [
     'Memorandum Order'
 ];
 
-
+// Props passed from parent component to control modal behavior and provide selected document data
 interface EditDocumentModalProps {
   isOpen: boolean;
   onClose: () => void;
   selectedData: any;
 }
-
 
 const EditDocumentModal: React.FC<EditDocumentModalProps> = ({isOpen, onClose, selectedData}) => {
   // 2. Initialize state with empty values
@@ -36,33 +37,95 @@ const EditDocumentModal: React.FC<EditDocumentModalProps> = ({isOpen, onClose, s
   const [date, setDate] = useState("");
   const [subject, setSubject] = useState("");
   const [keyword, setKeyword] = useState("");
-  const [oldFile, setOldFile] = useState<string>("");   // existing Firebase file URL
-  const [newFile, setNewFile] = useState<File | null>(null);  // new uploaded file
+  const userID = localStorage.getItem("userID");
+
+   // Hold the old issuance type   
+  const [oldIssuanceType, setOldIssuanceType] = useState("");
+
+  // Holds the current file URL already stored in Firebase / database
+  const [oldFile, setOldFile] = useState<string>("");
+
+  // Holds the newly uploaded file selected by the user (if they replace the document)
+  const [newFile, setNewFile] = useState<File | null>(null);
+
+   const [errors, setErrors] = useState<any>({});
+
+  // FORM VALIDATION
+  const validateForm = () => {
+
+    const newErrors: any = {};
+
+    if (!issuanceType || issuanceType === "--SELECT--")
+      newErrors.issuanceType = "Issuance type is required";
+
+    if (!newDocumentNo.trim())
+      newErrors.documentNo = "Document number is required";
+
+    if (!series)
+      newErrors.series = "Series is required";
+
+    if (!date)
+      newErrors.date = "Date is required";
+
+    if (!subject.trim())
+      newErrors.subject = "Subject is required";
+
+    setErrors(newErrors);
+
+    return Object.keys(newErrors).length === 0;
+  };
   
-  const updateData = async (e: { preventDefault: () => void; }) => {
-    e.preventDefault(); 
-   
-    const fileData = new FormData();
-    fileData.append('documentNo', documentNo);
-    fileData.append('newDocumentNo', newDocumentNo);
-    fileData.append('issuanceType', issuanceType);
-    fileData.append('series', series);
-    fileData.append('date', date);
-    fileData.append('subject', subject);
-    fileData.append('keyword', keyword);
-    fileData.append('oldFile', oldFile);
-    // ✅ Only append if file exists
-    if (newFile) {
-        fileData.append('myFile', newFile);
+  // Handles updating the document data and sending it to the backend API
+    const updateData = async (e: React.FormEvent) => {
+
+    e.preventDefault();
+
+    if (!validateForm()) return;
+
+    const confirmUpdate = window.confirm(
+      "Are you sure you want to update this document?"
+    );
+
+    if (!confirmUpdate) return;
+
+    try {
+
+      const fileData = new FormData();
+
+      fileData.append('documentNo', documentNo);
+      fileData.append('newDocumentNo', newDocumentNo);
+      fileData.append('issuanceType', issuanceType);
+      fileData.append('series', series);
+      fileData.append('date', date);
+      fileData.append('subject', subject);
+      fileData.append('keyword', keyword);
+      fileData.append('oldFile', oldFile);
+      fileData.append('oldIssuanceType', oldIssuanceType);
+    if(userID){
+        fileData.append('userID', userID);
     }
 
-    const response = await axios.put("http://localhost:8080/aims/documents/updateDocument", fileData,{
-            headers: {'Content-Type': 'multipart/form-data'}
-    });
-    if(response.data.success){
+      if (newFile) {
+        fileData.append('myFile', newFile);
+      }
+
+      const response = await api.put(
+        "/aims/documents/updateDocument",
+        fileData,
+        {
+          headers: { 'Content-Type': 'multipart/form-data' }
+        }
+      );
+
+      if (response.data.success) {
         alert(response.data.message);
+        handleClose();
+      }
+
+    } catch (error: any) {
+      alert(error.response?.data?.message || "Failed to update document!");
     }
-  }
+  };
 
   const handleClose = () => {
     setDocumentNo("");
@@ -73,6 +136,7 @@ const EditDocumentModal: React.FC<EditDocumentModalProps> = ({isOpen, onClose, s
     setSubject("");
     setKeyword("");
     setOldFile("");
+    setOldIssuanceType("");
     setNewFile(null);
 
   onClose(); // actually close modal
@@ -87,6 +151,8 @@ const EditDocumentModal: React.FC<EditDocumentModalProps> = ({isOpen, onClose, s
       setSubject(selectedData.subject || "");
       setKeyword(selectedData.keyword || "");
       setOldFile(selectedData.file || "");
+      setOldIssuanceType(selectedData.issuanceType || "");
+
       // --- DATE FORMATTING LOGIC ---
         if (selectedData.date) {
             const rawDate = new Date(selectedData.date);
@@ -141,6 +207,11 @@ const EditDocumentModal: React.FC<EditDocumentModalProps> = ({isOpen, onClose, s
                     <option key={index} value={item}>{item}</option>
                     ))}
                 </select>
+
+                    {errors.issuanceType && (
+                        <small className="text-danger">{errors.issuanceType}</small>
+                    )}
+
                 </div>
             </div>
 
@@ -154,6 +225,9 @@ const EditDocumentModal: React.FC<EditDocumentModalProps> = ({isOpen, onClose, s
                     value={newDocumentNo} 
                     onChange={(e) => setNewDocumentNo(e.target.value)}
                     />
+                    {errors.documentNo && (
+                        <small className="text-danger">{errors.documentNo}</small>
+                    )} 
                 </div>
 
                 <div className="col-md-3 mb-3">
@@ -165,6 +239,11 @@ const EditDocumentModal: React.FC<EditDocumentModalProps> = ({isOpen, onClose, s
                     autoComplete='off'
                     value={series}
                     onChange={(e) => setSeries(e.target.value)}/>
+
+                    {errors.series && (
+                        <small className="text-danger">{errors.series}</small>
+                    )}  
+
                 </div>
             </div>
 
@@ -178,6 +257,11 @@ const EditDocumentModal: React.FC<EditDocumentModalProps> = ({isOpen, onClose, s
                         autoComplete='off'
                         value={date}
                         onChange={(e) => setDate(e.target.value)}/>
+                        
+                        {errors.date && (
+                            <small className="text-danger">{errors.date}</small>
+                        )}
+
                 </div>
             </div>
 
@@ -192,6 +276,10 @@ const EditDocumentModal: React.FC<EditDocumentModalProps> = ({isOpen, onClose, s
                         autoComplete='off'
                         value={subject}
                         onChange={(e) => setSubject(e.target.value)} />
+
+                        {errors.subject && (
+                            <small className="text-danger">{errors.subject}</small>
+                        )}
                 </div>
             </div>
             <div className="row w-100 justify-content-center">

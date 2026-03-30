@@ -4,16 +4,17 @@ import express from 'express'
 import dotenv from 'dotenv'
 import apiRouter from './routes/index'
 import connectDB from './config/database'
+import { applySecurity } from "./middleware/security";
 
 const app = express();
+// Apply security middleware
+applySecurity(app);
 
 app.use(cors({
-  origin: 'http://localhost:5173', // Allow only your frontend port
+  origin: process.env.CLIENT_URL || 'http://localhost:5173',
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
   credentials: true
 }));
-
-const PORT = 8080;
 
 // To secure the connection of the database
 dotenv.config();
@@ -24,7 +25,4 @@ app.use(express.json());
 
 // Mount all API routes under /api
 app.use('/aims', apiRouter);
-
-app.listen(PORT, () => {
-  console.log(`🚀 Server running at http://localhost:${PORT}`);
-});
+app.listen(process.env.PORT);

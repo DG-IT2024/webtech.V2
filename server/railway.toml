@@ -1,0 +1,8 @@
+[build]
+builder = "nixpacks"
+
+[deploy]
+startCommand = "./node_modules/.bin/tsx server.ts"
+
+[environment]
+NODE_ENV = "production"

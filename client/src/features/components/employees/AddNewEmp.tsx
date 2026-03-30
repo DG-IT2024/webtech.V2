@@ -1,14 +1,22 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, useEffect } from 'react'
 import { X, Save, Edit2 } from "lucide-react";
 import "../../../assets/styles/AddNewEmp.css";
-import axios from 'axios';
+import api from '../../../shared/api';
 
 const AddNewEmp = () => {
   // Create states for user inputs
+  // Controls visibility of the delete confirmation modal
   const [showModal, setShowModal] = useState(false);
+
+  // Stores the ID of the employee currently being edited (null means creating a new employee) 
   const [editingId, setEditingId] = useState<string | null>(null);
+
+  // Stores the list of employees retrieved from the backend API
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [users, setUsers] = useState<any[]>([]);
+
+  // Form input states
   const [userID, setEmployeeID] = useState("")
   const [fname, setFname] = useState("");
   const [mname, setMname] = useState("");
@@ -17,17 +25,26 @@ const AddNewEmp = () => {
   const [userName, setUserName] = useState("");
   const [password, setPassword] = useState("");
   const [role, setRole] = useState("");
+
+  // Validation error state
+  const [errors, setErrors] = useState<any>({});
     
   const fetchEmployees = async () => {
-    const response = await axios.get("http://localhost:8080/aims/employees/allEmployees");
+   
+    // Fetch all employees from backend API 
+    const response = await api.get("/aims/employees/allEmployees");
     setUsers(response.data.users ?? response.data ?? []);
+    const userID = await api.get("/aims/employees/newEmployee");
+    setEmployeeID(userID.data.nextID);
   }
+
   useEffect (() =>{
+    // Runs only once when the component mounts to initially load employees
     // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchEmployees();
   }, []);
 
-//To empty input Fields
+  // Clears all form fields and resets editing mode
   function emptyInputComponents() {
     setEmployeeID("");
     setFname("");
@@ -38,10 +55,57 @@ const AddNewEmp = () => {
     setPassword("");
     setRole("");
     setEditingId(null);
+    setErrors({});
+    fetchEmployees();
   }
+
+  // Frontend validation
+  const validateForm = () => {
+
+    const newErrors:any = {};
+
+    if(!fname.trim()){
+      newErrors.fname = "First name is required";
+    }
+
+    if(!lname.trim()){
+      newErrors.lname = "Last name is required";
+    }
+
+    if(!email.trim()){
+      newErrors.email = "Email is required";
+    } else if(!/\S+@\S+\.\S+/.test(email)){
+      newErrors.email = "Invalid email format";
+    }
+
+    if(!userName.trim()){
+      newErrors.userName = "Username is required";
+    }
+
+    if(!password.trim()){
+      newErrors.password = "Password is required";
+    } else if(password.length < 6){
+      newErrors.password = "Password must be at least 6 characters";
+    }
+
+    if(!role){
+      newErrors.role = "Please select a role";
+    }
+
+    setErrors(newErrors);
+
+    return Object.keys(newErrors).length === 0;
+  }
+
   const handleUpdate = (index: number)=>{
+
+    // Retrieve selected employee from table based on index and store in selectedUser variable
     const selectedUser = users[index];
+
+    // Switch component to editing mode by setting editingId to the selected employee's ID and populating form fields with their data
     setEditingId(selectedUser.userID);
+    
+    // Populate form fields with selected employee data to allow user to edit existing employee information
     setEmployeeID(selectedUser.userID); 
     setFname(selectedUser.firstName);
     setMname(selectedUser.middleName);
@@ -54,18 +118,38 @@ const AddNewEmp = () => {
 
   const handlebtnDelete = async() => {
     try{
-      const response = await axios.delete(`http://localhost:8080/aims/employees/deleteEmployee/${userID}`);
+
+      // Send DELETE request to backend to remove employee by ID
+      const response = await api.delete(`/aims/employees/deleteEmployee/${userID}`);
       alert(response.data.message);
+      
+      // Refresh employee list after deletion
       fetchEmployees();
+
+      // Close confirmation modal
       setShowModal(false);
     }catch(error){
       alert(error);
     }
   }
-    const handlebtnRegister= async () => {
+
+  const handlebtnRegister= async () => {
+    // Run frontend validation before submitting
+    if(!validateForm()){
+      return;
+    }
+
+    // Confirmation UI
+    const confirmAction = window.confirm(editingId ? "Update this employee?" : "Create this employee?");
+    if(!confirmAction){
+      return;
+    }
+
     try{
+
+      // If editingId is null → create a new employee
       if(editingId === null){
-        const response = await axios.post("http://localhost:8080/aims/employees/addEmployee", {
+        const response = await api.post("/aims/employees/addEmployee", {
         userID: userID,
         fname: fname,
         mname: mname,
@@ -75,15 +159,25 @@ const AddNewEmp = () => {
         password: password,
         role: role
       });
+
       if(response.data.success){
+
+        // Update local employee list with the newly created employee (handles different response formats) 
         setUsers(response.data.users);
+
         alert(response.data.message);
+
+        // Refresh employee table from server after successful creation to ensure data consistency (handles different response formats)
         fetchEmployees();
+        
+        // Clear form inputs and reset editing mode after successful creation
         emptyInputComponents();
       }
+
       }else{
-        alert(userID);
-        const response = await axios.put(`http://localhost:8080/aims/employees/updateEmployee/${userID}`, {
+        
+        // If editingId exists → update existing employee
+        const response = await api.put(`/aims/employees/updateEmployee/${userID}`, {
           fname: fname,
           mname: mname,
           lname: lname,
@@ -92,17 +186,24 @@ const AddNewEmp = () => {
           password: password,
           role: role
         });
+
         alert(response.data.message);
+        
+        // Refresh employee list after update to reflect changes (handles different response formats)
         fetchEmployees();
+
+        // Reset form and exit editing mode after successful update  
         emptyInputComponents();
       }
+      
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     }catch(error: any){
-      // Axios throws an error for 401/500 status codes
+      // Handles backend errors Axios throws an error for (401, 500, validation errors, etc.)
       alert(error.response?.data?.message || "Failed to Add New Employee!");
     }
 
   }
+
   return (
     <div className="bg-body-tertiary m-2 main-Card min-height-center">
 
@@ -154,13 +255,16 @@ const AddNewEmp = () => {
         <h2 className="title">New Employee</h2>
 
         <div className="form-grid">
+
           <div className="form-group">
               <label>Employee ID</label>
               <input 
                 type="text"
+                disabled
                 autoComplete='off'
                 value={userID}
                 onChange={(e) => setEmployeeID(e.target.value)}/>
+              {errors.userID && <small className="text-danger">{errors.userID}</small>}
             </div>
 
           <div className="form-group">
@@ -170,6 +274,7 @@ const AddNewEmp = () => {
               autoComplete='off'
               value={email}
               onChange={(e) => setEmail(e.target.value)}/>
+            {errors.email && <small className="text-danger">{errors.email}</small>}
           </div>
 
           <div className="form-group">
@@ -179,6 +284,7 @@ const AddNewEmp = () => {
               autoComplete='off'
               value={fname}
               onChange={(e) => setFname(e.target.value)}/>
+            {errors.fname && <small className="text-danger">{errors.fname}</small>}
           </div>
         
           <div className="form-group">
@@ -188,6 +294,7 @@ const AddNewEmp = () => {
               autoComplete='off'
               value={userName}
               onChange={(e) => setUserName(e.target.value)}/>
+            {errors.userName && <small className="text-danger">{errors.userName}</small>}
           </div>
 
           <div className="form-group">
@@ -206,6 +313,7 @@ const AddNewEmp = () => {
               autoComplete='off'
               value={password}
               onChange={(e) => setPassword(e.target.value)}/>
+            {errors.password && <small className="text-danger">{errors.password}</small>}
           </div>
 
           <div className="form-group">
@@ -215,6 +323,7 @@ const AddNewEmp = () => {
               autoComplete='off'
               value={lname}
               onChange={(e) => setLname(e.target.value)}/>
+            {errors.lname && <small className="text-danger">{errors.lname}</small>}
           </div>
 
           <div className="form-group">
@@ -226,7 +335,9 @@ const AddNewEmp = () => {
               <option value="Employee">Employee</option>
               <option value="Admin">Admin</option>
             </select>
+            {errors.role && <small className="text-danger">{errors.role}</small>}
           </div>
+
         </div>
 
         <div className="actions">
