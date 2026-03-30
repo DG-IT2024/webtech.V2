@@ -84,6 +84,7 @@ const ShareDocumentModal: React.FC<ShareDocumentModalProps> = ({
   const successForwarded = () => {
     setSearch("");
     setSelectedUsers([]);
+    onClose();
   }
   //Handle cancel button or close the modal
   const handleClose = () => {
@@ -105,27 +106,23 @@ const ShareDocumentModal: React.FC<ShareDocumentModalProps> = ({
     try {
       const emails = selectedUsers.map((u) => u.email);
 
-      // Send email notifications — failure here should not block document sharing
-      try {
-        const emailNotification = await api.post("/aims/emailNotification/sendEmail", {
+      // Run email notification and document sharing in parallel
+      const [, shareResponse] = await Promise.all([
+        api.post("/aims/emailNotification/sendEmail", {
           emails: emails,
-          subject: issuanceType+" No. "+documentNo,
+          subject: (issuanceType ?? "") + " No. " + (documentNo ?? ""),
           message: "You have new document forwarded from records section!"
-        });
-        if(emailNotification.data.success){
-          alert(emailNotification.data.message);
-        }
-      } catch {
-        console.warn("Email notification failed, proceeding with share.");
-      }
+        }).catch(() => {
+          console.warn("Email notification failed, proceeding with share.");
+        }),
+        api.post("/aims/documents/shareDocument", {
+          emails: emails,
+          documentNo: documentNo
+        })
+      ]);
 
-      // Updating share documents model
-      const response = await api.post("/aims/documents/shareDocument", {
-        emails: emails,
-        documentNo: documentNo
-      });
-      alert(response.data.message);
-      if(response.data.success){
+      alert(shareResponse.data.message);
+      if(shareResponse.data.success){
         successForwarded();
       }
     } catch (error) {

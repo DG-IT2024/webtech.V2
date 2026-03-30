@@ -17,20 +17,20 @@ const transporter = nodemailer.createTransport({
 });
 
 export const sendEmailNotification = async (req: Request, res: Response) => {
-    try {
-      const {emails, subject, message} = req.body;  
-      console.log("I am being access! The message is: ", message);
-        const info = await transporter.sendMail({
-            from: "Records Section <"+ process.env.SMTP_USER +">" ,
-            to: emails,
-            subject: subject,
-            text: message
-        });
+    const {emails, subject, message} = req.body;
+    console.log("I am being access! The message is: ", message);
 
+    // Respond immediately — email is sent in the background to avoid blocking
+    res.status(200).json({ success: true, message: "Email notification sent!" });
+
+    transporter.sendMail({
+        from: "Records Section <" + process.env.SMTP_USER + ">",
+        to: emails,
+        subject: subject,
+        text: message
+    }).then(() => {
         console.log("Email sent to:", emails);
-        return res.status(200).json({ success: true, message: "Email successfully sent!" });
-    } catch (error) {
-        console.error("Email sending failed: ", error);
-        return res.status(500).json({ success: false, message: "Failed to send email." });
-    }
+    }).catch((error) => {
+        console.error("Background email sending failed: ", error);
+    });
 };

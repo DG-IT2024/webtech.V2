@@ -43,7 +43,6 @@ const IncomingDoc = () => {
   // Method for accept button
   const acknowledgeDocument = async (documentNo: string, action: string) => {
     try {
-      alert("Action is: "+ action);
       const response = await api.post("/aims/documents/acknowledgeDocument", {
         documentNo, action, userID
       });

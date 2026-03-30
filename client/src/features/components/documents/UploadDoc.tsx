@@ -91,8 +91,14 @@ const UploadDoc = () => {
 
       if (res.data.success) {
         alert(res.data.message);
-
-        resetForm();
+        setFile(null);
+        setDocumentNo("");
+        setIssuanceType("");
+        setSeries("");
+        setDate("");
+        setSubject("");
+        setKeyword("");
+        setFileKey(Date.now());
         setErrors({});
       }
 

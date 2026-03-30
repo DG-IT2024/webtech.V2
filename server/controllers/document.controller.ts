@@ -70,14 +70,13 @@ export const deleteDocument = async(req: Request, res: Response) => {
         // Get file path from request body
         const {file} = req.body;
 
-        // Remove document record from database
-        const document = await Document.findOneAndDelete({documentNo:documentNo});
-        
-        // Create Firebase storage reference for the file
+        // Delete from MongoDB and Firebase Storage in parallel
         const urlFile = ref(storage, file);
-        
-        // Delete the file from Firebase storage
-        await deleteObject(urlFile);
+        const [document] = await Promise.all([
+            Document.findOneAndDelete({documentNo:documentNo}),
+            deleteObject(urlFile)
+        ]);
+
         if(document){
             return res.status(200).json({success: true, message: "Successfully deleted document"});
         }
