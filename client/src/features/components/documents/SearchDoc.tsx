@@ -78,13 +78,13 @@ const SearchDoc = () => {
         <>
           {role === "Admin" ? (
             <>
-              <img src="../public/forward.png" className='tbl-Icon' onClick={()=> toggleShareModal(item.documentNo, item.issuanceType)} />
-              <img src="../public/pen.png" className='tbl-Icon' onClick={() => toggleModal(item)} />
-              <img src="../public/delete.png" className='tbl-Icon' onClick={() => handleDelete(item.documentNo, item.file)} />
-              <img src="../public/download.png" className='tbl-Icon' onClick={() => handleViewFile(item.file)} />
+              <img src="/forward.png" className='tbl-Icon' onClick={()=> toggleShareModal(item.documentNo, item.issuanceType)} />
+              <img src="/pen.png" className='tbl-Icon' onClick={() => toggleModal(item)} />
+              <img src="/delete.png" className='tbl-Icon' onClick={() => handleDelete(item.documentNo, item.file)} />
+              <img src="/download.png" className='tbl-Icon' onClick={() => handleViewFile(item.file)} />
             </>
             ) : (
-              <img src="../public/download.png" className='tbl-Icon' onClick={() => handleViewFile(item.file)} />
+              <img src="/download.png" className='tbl-Icon' onClick={() => handleViewFile(item.file)} />
             )
           }
         </>

@@ -24,7 +24,7 @@ const MyDocuments = () => {
       {
         header: "Action", key: "actions", render: (item) => (
           <>
-            <img src="../public/download.png" className='tbl-Icon' onClick={() => showDetails(item.file)} />
+            <img src="/download.png" className='tbl-Icon' onClick={() => showDetails(item.file)} />
           </>
         )
       }
