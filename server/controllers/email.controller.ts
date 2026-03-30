@@ -13,12 +13,13 @@ const transporter = nodemailer.createTransport({
             host: process.env.SMTP_HOST,
             port: Number(process.env.SMTP_PORT),
             secure: false, // true if port 465
+            family: 4, // Force IPv4 — Railway cannot reach Gmail SMTP over IPv6
             auth: {
                 user: process.env.SMTP_USER,
                 pass: process.env.SMTP_PASS
             },
             tls: {
-              rejectUnauthorized: false, // allow self-signed certificates
+              rejectUnauthorized: false,
             },
 });
 

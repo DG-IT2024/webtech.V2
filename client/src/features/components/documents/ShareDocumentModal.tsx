@@ -122,9 +122,7 @@ const ShareDocumentModal: React.FC<ShareDocumentModalProps> = ({
       ]);
 
       alert(shareResponse.data.message);
-      if(shareResponse.data.success){
-        successForwarded();
-      }
+      successForwarded();
     } catch (error) {
       console.error("Share failed:", error);
       alert("Something went wrong while sharing the document.");
