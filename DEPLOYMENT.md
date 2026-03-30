@@ -107,12 +107,14 @@ Create the file `client/.env` with:
 
 ```env
 VITE_GOOGLE_CLIENT_ID=your-google-oauth-client-id.apps.googleusercontent.com
-VITE_API_URL=http://localhost:8080
+VITE_API_URL=https://api.raisesystemph.com
 ```
 
-> For production, replace `VITE_API_URL` with `https://api.raisesystemph.com`.
+> For local development, set `VITE_API_URL=http://localhost:8080`.
 
 > The `VITE_` prefix is required. Vite only exposes variables prefixed with `VITE_` to browser code.
+
+> A template is available at `client/.env.example` and `server/.env.example`.
 
 ---
 
@@ -261,17 +263,7 @@ The frontend will be served at `https://raisesystemph.com`.
 
 ---
 
-### Step 1 — Update the API URL
-
-Before deploying, ensure `client/.env` points to the deployed backend:
-
-```env
-VITE_API_URL=https://api.raisesystemph.com
-```
-
----
-
-### Step 2 — Deploy to Vercel
+### Step 1 — Deploy to Vercel
 
 1. Create an account at https://vercel.com
 2. Click **Add New → Project** → import from GitHub
@@ -307,31 +299,19 @@ VITE_API_URL=https://api.raisesystemph.com
 
 ## 8. Post-Deployment Configuration
 
-### 8a. Update CORS in the Server
+### 8a. CORS — already configured
 
-The server's CORS origin **must** be updated to match your deployed frontend URL.
-
-Open `server/server.ts` and change:
+`server/server.ts` already uses `process.env.CLIENT_URL` for the CORS origin:
 
 ```typescript
-// Before (development only)
 app.use(cors({
-  origin: 'http://localhost:5173',
+  origin: process.env.CLIENT_URL || 'http://localhost:5173',
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
   credentials: true
 }));
 ```
 
-```typescript
-// After (production)
-app.use(cors({
-  origin: process.env.CLIENT_URL || 'https://raisesystemph.com',
-  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
-  credentials: true
-}));
-```
-
-The `CLIENT_URL` is already set to `https://raisesystemph.com` in `server/.env`.
+Ensure `CLIENT_URL=https://raisesystemph.com` is set in the Railway environment variables. No code change needed.
 
 ---
 
@@ -374,24 +354,23 @@ In the Google Cloud Console (https://console.cloud.google.com):
 
 Use this checklist before going live:
 
-### Server
-- [ ] `server/.env` created with all required variables
-- [ ] `ATLAS_URI` updated with valid MongoDB Atlas credentials
-- [ ] MongoDB Atlas Network Access includes server IP
+### Server (Railway)
+- [ ] `server/.env` exists locally (copy from `server/.env.example`)
+- [ ] All variables from `server/.env.example` added to Railway **Variables** tab
+- [ ] `CLIENT_URL=https://raisesystemph.com` set in Railway variables
+- [ ] `NODE_ENV=production` set in Railway variables
+- [ ] MongoDB Atlas Network Access includes Railway server IP (or `0.0.0.0/0`)
 - [ ] Gmail App Password configured for SMTP
 - [ ] Firebase credentials are valid and project is active
-- [ ] `CLIENT_URL=https://raisesystemph.com` set in environment
-- [ ] CORS origin updated in `server/server.ts`
-- [ ] `NODE_ENV=production` set in environment
-- [ ] Server starts successfully with `npm start`
-- [ ] DNS CNAME record for `api.raisesystemph.com` points to hosting platform
+- [ ] Server deploys and starts successfully in Railway logs
+- [ ] DNS CNAME record for `api.raisesystemph.com` added in Namecheap
 - [ ] Test: `GET https://api.raisesystemph.com/aims/employees/allEmployees`
 
-### Client
-- [ ] `client/.env` has `VITE_API_URL=https://api.raisesystemph.com`
-- [ ] `npm run build` completes without errors
-- [ ] `client/dist/` folder generated
-- [ ] DNS A/CNAME records for `raisesystemph.com` point to hosting platform
+### Client (Vercel)
+- [ ] `VITE_API_URL=https://api.raisesystemph.com` added in Vercel environment variables
+- [ ] `VITE_GOOGLE_CLIENT_ID` added in Vercel environment variables
+- [ ] `npm run build` completes without errors locally
+- [ ] DNS A record (`@` → Vercel IP) and CNAME (`www`) added in Namecheap
 - [ ] Google OAuth Authorized Origins includes `https://raisesystemph.com`
 - [ ] Firebase Authorized Domains includes `raisesystemph.com`
 - [ ] Login page loads at `https://raisesystemph.com`
