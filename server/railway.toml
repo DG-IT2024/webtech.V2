@@ -2,7 +2,7 @@
 builder = "nixpacks"
 
 [deploy]
-startCommand = "npx tsx server.ts"
+startCommand = "node -r tsx/cjs server.ts"
 
 [environment]
 NODE_ENV = "production"
