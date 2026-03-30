@@ -7,7 +7,7 @@ const DashboardBanner = () => {
     <div className="dashboard-banner">
       <div className="banner-image">
         
-        <img src="../public/AIMS-Banner.png"/>
+        <img src="/AIMS-Banner.png"/>
       </div>
     </div>
   );
