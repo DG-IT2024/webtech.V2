@@ -92,36 +92,45 @@ const ShareDocumentModal: React.FC<ShareDocumentModalProps> = ({
     onClose();
   };
 
- const handleShare = async () => {  
+ const handleShare = async () => {
     // Confirmation for sharing documents
     const confirmed = window.confirm("Are you sure you want to share the document?");
     if(!confirmed) return;
-      
-    // Sends email notifications to all selected users informing them that a document has been shared with them 
+
     if(selectedUsers.length === 0){
       alert("Please select at least one user.");
-      return
-    }else{
-      const emails = selectedUsers.map((u) => u.email);
-      const emailNotification = await api.post("/aims/emailNotification/sendEmail", {
-        emails: emails,
-        subject: issuanceType+" No. "+documentNo,
-        message: "You have new document forwarded from records section!"
-    });
-      if(emailNotification.data.success){
-        alert(emailNotification.data.message);
-      }
+      return;
     }
 
-    // Updating share documents model
-    const emails = selectedUsers.map((u) => u.email);
-    const response = await api.post("/aims/documents/shareDocument", {
-      emails: emails,
-      documentNo: documentNo
-    })
-    alert(response.data.message);
-    if(response.data.success){
-      successForwarded(); //Calling the method to empty the search field storage if forwarding is success
+    try {
+      const emails = selectedUsers.map((u) => u.email);
+
+      // Send email notifications — failure here should not block document sharing
+      try {
+        const emailNotification = await api.post("/aims/emailNotification/sendEmail", {
+          emails: emails,
+          subject: issuanceType+" No. "+documentNo,
+          message: "You have new document forwarded from records section!"
+        });
+        if(emailNotification.data.success){
+          alert(emailNotification.data.message);
+        }
+      } catch {
+        console.warn("Email notification failed, proceeding with share.");
+      }
+
+      // Updating share documents model
+      const response = await api.post("/aims/documents/shareDocument", {
+        emails: emails,
+        documentNo: documentNo
+      });
+      alert(response.data.message);
+      if(response.data.success){
+        successForwarded();
+      }
+    } catch (error) {
+      console.error("Share failed:", error);
+      alert("Something went wrong while sharing the document.");
     }
   };
 
