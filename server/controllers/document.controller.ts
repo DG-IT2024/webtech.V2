@@ -70,19 +70,21 @@ export const deleteDocument = async(req: Request, res: Response) => {
         // Get file path from request body
         const {file} = req.body;
 
-        // Delete from MongoDB and Firebase Storage in parallel
-        const urlFile = ref(storage, file);
-        const [document] = await Promise.all([
-            Document.findOneAndDelete({documentNo:documentNo}),
-            deleteObject(urlFile)
-        ]);
+        // Delete from MongoDB first, then Firebase Storage
+        const document = await Document.findOneAndDelete({documentNo:documentNo});
 
-        if(document){
-            return res.status(200).json({success: true, message: "Successfully deleted document"});
+        if(!document){
+            return res.status(404).json({success: false, message: "Document not found!"});
         }
+
+        const urlFile = ref(storage, file);
+        await deleteObject(urlFile);
+
+        return res.status(200).json({success: true, message: "Successfully deleted document"});
     }catch(error){
         // Return error if document deletion fails
-        return res.status(400).json({success: false, message: "Document not found!"});
+        console.error("deleteDocument error:", error);
+        return res.status(400).json({success: false, message: "Failed to delete document!"});
     }
 }
 
@@ -164,8 +166,8 @@ export const updateDocument = async(req: Request, res: Response) => {
             // Get new file URL after upload
             urlFile = await getDownloadURL(imageRef);
         }
-        // If Issuance Type is being change
-        if(oldIssuanceType !== issuanceType){ 
+        // If Issuance Type is being changed and no new file was uploaded (move existing file to new folder)
+        if(oldIssuanceType !== issuanceType && !fileData){
             console.log("Old Version ", oldIssuanceType);
             console.log("New Version ", issuanceType);
             try{
@@ -197,10 +199,11 @@ export const updateDocument = async(req: Request, res: Response) => {
 
             }catch(error){
                 // Handle update errors
+                console.error("updateDocument (issuance type change) error:", error);
                 return res.status(400).json({success: false, message: "Error to Update file!"});
             }
         }
-        
+
          // Document filter condition
          const filter = {documentNo:documentNo};
 
@@ -228,6 +231,7 @@ export const updateDocument = async(req: Request, res: Response) => {
             }
     }catch(error){
         // Handle update errors
+        console.error("updateDocument error:", error);
         return res.status(400).json({success: false, message: "Error to Update file!"});
     }
 }
@@ -246,42 +250,38 @@ export const addDocument = async(req: Request, res: Response) => {
          // Check if document already exists
         const existingDoc = await Document.findOne({ documentNo });
         if (existingDoc) {
-            return res.status(401).json({ success: false, message: "Document already exists!" });
+            return res.status(409).json({ success: false, message: "Document already exists!" });
         }
-        const response = await Document.findOne({documentNo:documentNo});
-        if(!response){
 
-            // Upload file to Firebase storage
-            const imageRef = ref(storage, `${issuanceType}/${fileData.originalname}`);
-            await uploadBytes(imageRef, fileData.buffer, {
-                contentType: fileData.mimetype,
-            });
+        // Upload file to Firebase storage
+        const imageRef = ref(storage, `${issuanceType}/${fileData.originalname}`);
+        await uploadBytes(imageRef, fileData.buffer, {
+            contentType: fileData.mimetype,
+        });
 
-            // Get public download URL
-            const url = await getDownloadURL(imageRef);
-            // Create new document object
-            const newDocument = new Document({
-                documentNo : documentNo,
-                issuanceType : issuanceType,
-                series : series,
-                date : date,
-                subject : subject,
-                keyword : keyword,
-                file : url,
-                uploadDate : new Date(),
-                userID : userID,
-            })
+        // Get public download URL
+        const url = await getDownloadURL(imageRef);
+        // Create new document object
+        const newDocument = new Document({
+            documentNo : documentNo,
+            issuanceType : issuanceType,
+            series : series,
+            date : date,
+            subject : subject,
+            keyword : keyword,
+            file : url,
+            uploadDate : new Date(),
+            userID : userID,
+        })
 
-            // Save document to database
-            await newDocument.save();
-            return res.status(200).json({success: true, message: "Successfully upload new document!"});
-        }else{
-            return res.status(401).json({success: false, message: "Document already exist!"});
-        }
-    }catch{
+        // Save document to database
+        await newDocument.save();
+        return res.status(200).json({success: true, message: "Successfully upload new document!"});
+    }catch(error){
         // Handle document creation errors
-        return res.status(401).json({success: false, message: "Failed to add new document!"});
-        
+        console.error("addDocument error:", error);
+        return res.status(500).json({success: false, message: "Failed to add new document!"});
+
     }
 }
 
