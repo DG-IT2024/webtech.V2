@@ -77,7 +77,10 @@ export const deleteDocument = async(req: Request, res: Response) => {
             return res.status(404).json({success: false, message: "Document not found!"});
         }
 
-        const urlFile = ref(storage, file);
+        // Extract storage path from HTTPS download URL (e.g. "Folder/filename.pdf")
+        const decodedUrl = decodeURIComponent(file);
+        const storagePath = decodedUrl.split("/o/")[1].split("?")[0];
+        const urlFile = ref(storage, storagePath);
         await deleteObject(urlFile);
 
         return res.status(200).json({success: true, message: "Successfully deleted document"});
@@ -171,13 +174,12 @@ export const updateDocument = async(req: Request, res: Response) => {
             console.log("Old Version ", oldIssuanceType);
             console.log("New Version ", issuanceType);
             try{
-                // Get reference to old file in storage
-                const oldFileRef = ref(storage, oldFile);
+                // Get reference to old file in storage using storage path (not HTTPS URL)
+                const oldFileRef = ref(storage, path);
 
-                // Extract filename from old URL (assumes file URL contains the filename)
- 
+                // Extract filename from storage path
                 const decodedPath = decodeURIComponent(path);
-                const filename = decodedPath.split('/').pop(); 
+                const filename = decodedPath.split('/').pop();
 
                 // Define new storage path with new issuanceType
                 const newFilePath = `${issuanceType}/${filename}`;

@@ -96,12 +96,15 @@ const SearchDoc = () => {
     const confirmed = window.confirm("Are you sure you want to delete this document?");
     if (!confirmed) return;
 
-    const response = await api.delete(`/aims/documents/deleteDocument/${documentNo}`, {
-      data: { file }
-    });
-
-    alert(response.data.message);
-    fetchDocuments();
+    try {
+      const response = await api.delete(`/aims/documents/deleteDocument/${documentNo}`, {
+        data: { file }
+      });
+      alert(response.data.message);
+      fetchDocuments();
+    } catch (err: any) {
+      alert(err.response?.data?.message || "Failed to delete document.");
+    }
   }
 
   const handleViewFile = async (file: string) => {
