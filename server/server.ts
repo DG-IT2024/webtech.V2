@@ -9,6 +9,8 @@ import { applySecurity } from "./middleware/security";
 // Load environment variables first
 dotenv.config();
 
+console.log('CLIENT_URL:', process.env.CLIENT_URL);
+
 const app = express();
 // Apply security middleware
 applySecurity(app);
