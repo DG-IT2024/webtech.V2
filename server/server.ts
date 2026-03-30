@@ -6,6 +6,9 @@ import apiRouter from './routes/index'
 import connectDB from './config/database'
 import { applySecurity } from "./middleware/security";
 
+// Load environment variables first
+dotenv.config();
+
 const app = express();
 // Apply security middleware
 applySecurity(app);
@@ -15,9 +18,6 @@ app.use(cors({
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
   credentials: true
 }));
-
-// To secure the connection of the database
-dotenv.config();
 connectDB();
 
 // Middleware for parsing JSON
